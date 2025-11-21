@@ -6,7 +6,15 @@ dig.df <- read_csv("DIG.csv")
 
 
 ui <- fluidPage(
-  titlePanel("DIG Data Explorer")
+  titlePanel("DIG Data Explorer"),
+  sidebarLayout(
+    sidebarPanel(
+      checkboxGroupInput(inputId = "Treatment", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL)
+    ),
+    mainPanel(
+      
+    )
+  )
 )
 
 server <- function(input, output) {
