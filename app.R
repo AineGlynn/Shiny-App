@@ -46,8 +46,10 @@ ui <- fluidPage(
       
     ),
     mainPanel(
-      plotOutput("plot1"),
-      dataTableOutput("table1")
+      plotOutput("plot1", click = "plot1_click"),
+      plotOutput("plot2", click = "plot2_click"),
+      dataTableOutput("table1"),
+      dataTableOutput("table2")
     )
   )
   
@@ -57,7 +59,7 @@ server <- function(input, output) {
   
   DIG_sub <- reactive({
     dig2 %>%
-      filter(SEX == input$SEX) %>%
+      filter(SEX %in% input$SEX) %>%
      filter(AGE == input$AGE) %>%
     filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
@@ -67,11 +69,30 @@ server <- function(input, output) {
       geom_point(colour = 'magenta4') +
       theme_minimal() 
   })
-  
-  output$table1 <- renderDataTable({ 
-    DIG_sub()
+ 
+  output$plot2 <- renderPlot({ 
+    ggplot(DIG_sub(), aes(x = TRTMT)) +
+      geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), width = 0.4) +
+      labs(title = 'Number of Patients per Treatment Group',
+           x = 'Treatment Group',
+           y = 'Total') +
+      theme_bw()
   })
-  
+#clicks:
+  output$click_info1 <- renderPrint({
+    input$plot1_click
+  })
+  output$click_info2 <- renderPrint({
+    input$plot2_click
+  })  
+   
+  # Tables
+  output$table1 <- renderDataTable({req(input$plot1_click)
+    nearPoints(DIG_sub(), input$plot1_click)})
+  output$table2 <- renderDataTable({req(input$plot2_click)
+    nearPoints(DIG_sub(), input$plot2_click)})
 }
-
+   
+ 
 shinyApp(ui, server)
+
