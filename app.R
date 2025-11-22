@@ -23,6 +23,19 @@ server <- function(input, output) {
 
 shinyApp(ui, server)
 
+
+
+
+
+#Aine's Plot of Basline Characteristics: 
+dig2 = dig.df %>%
+  mutate(SEX = factor(SEX, 
+                      levels = c(1, 2), 
+                      labels = c('Male', 'Female')), 
+         TRTMT = factor(TRTMT,
+                        levels = c(0, 1),
+                        labels = c('Placebo', 'Treatment')))
+
 ui <- fluidPage(
   titlePanel("DIG Trial"),
   sidebarLayout(
@@ -43,9 +56,10 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   DIG_sub <- reactive({
-    dig.df %>%
-      # filter(SEX == input$SEX) %>%
-      filter(AGE == input$AGE)
+    dig2 %>%
+      filter(SEX == input$SEX) %>%
+     filter(AGE == input$AGE) %>%
+    filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
   
   output$plot1 <- renderPlot({ 
