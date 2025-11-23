@@ -1,34 +1,32 @@
 library(shiny)
 library(tidyverse)
 library(readr)
+library(ggplot2)
+library(plotly)
 
 dig.df <- read_csv("DIG.csv")
 
 
-ui <- fluidPage(
-  titlePanel("DIG Data Explorer"),
-  sidebarLayout(
-    sidebarPanel(
-      checkboxGroupInput(inputId = "Treatment", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL)
-    ),
-    mainPanel(
+#ui <- fluidPage(
+#  titlePanel("DIG Data Explorer"),
+#  sidebarLayout(
+#    sidebarPanel(
+#      checkboxGroupInput(inputId = "Treatment", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL)
+#    ),
+#    mainPanel(
       
-    )
-  )
-)
+#    )
+#  )
+#)
 
-server <- function(input, output) {
+#server <- function(input, output) {
   
-}
+#}
 
-shinyApp(ui, server)
+#shinyApp(ui, server)
 
-
-
-
-
-#Aine's Plot of Basline Characteristics: 
-dig2 = dig.df %>%
+dig.df <- dig.df %>%
+  select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, HYPERTEN, CVD, WHF, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY) %>%
   mutate(SEX = factor(SEX, 
                       levels = c(1, 2), 
                       labels = c('Male', 'Female')), 
@@ -37,12 +35,13 @@ dig2 = dig.df %>%
                         labels = c('Placebo', 'Treatment')))
 
 ui <- fluidPage(
-  titlePanel("DIG Trial"),
+  titlePanel("DIG Data Exploration"),
   sidebarLayout(
     sidebarPanel(
-      selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE),
+      selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
       sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
-      sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = 30, step = 1, animate = FALSE)
+      #changing the age so that a range can be selected
+      sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
       
     ),
     mainPanel(
@@ -58,9 +57,9 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   DIG_sub <- reactive({
-    dig2 %>%
+    dig.df %>%
       filter(SEX %in% input$SEX) %>%
-     filter(AGE == input$AGE) %>%
+     filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
     filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
   
@@ -72,11 +71,11 @@ server <- function(input, output) {
  
   output$plot2 <- renderPlot({ 
     ggplot(DIG_sub(), aes(x = TRTMT)) +
-      geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), width = 0.4) +
+      geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
       labs(title = 'Number of Patients per Treatment Group',
            x = 'Treatment Group',
            y = 'Total') +
-      theme_bw()
+      theme_minimal()
   })
 #clicks:
   output$click_info1 <- renderPrint({
