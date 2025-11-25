@@ -19,13 +19,33 @@ dig.df <- dig.df %>%
          Death_Month = round(DEATHDAY/30)) 
 
 
+
 ui <- fluidPage(
   titlePanel("DIG Data Exploration"),
   sidebarLayout(
     sidebarPanel(
+      radioButtons("plotType","Plot Type:",
+                   c(Barchart = "bar", Boxplot = "box")),
+      
+      conditionalPanel(
+        condition = "input.plotType = 'box'",
+        selectInput(inputId = "SEX", 
+                    label = "Select Gender:",
+                    choices = c("Male", "Female"),
+                    multiple = TRUE,
+                    selected = c("Male", "Female"))),
+      
+      conditionalPanel(
+        condition = "input.plotType = 'bar'",
+        sliderInput("BMI",
+                    "BMI Range:",
+                    min = 14,
+                    max = 65,
+                    value = c(20, 50))),
+
       #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL),
-      selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-      sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
+      #selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+      #sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
       #changing the age so that a range can be selected
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
       sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE)
@@ -37,9 +57,10 @@ ui <- fluidPage(
       dataTableOutput("table1"),
       dataTableOutput("table2")
     )
-  )
-  
+  ),
 )
+  
+
 
 server <- function(input, output) {
   
