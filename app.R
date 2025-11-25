@@ -25,7 +25,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       radioButtons("plotType","Plot Type:",
-                   c(Barchart = "bar", Boxplot = "box")),
+                   c(scatterplot = "scatter", Barchart = "bar")),
 
       conditionalPanel(
         condition = "input.plotType = 'box'",
@@ -49,8 +49,8 @@ ui <- fluidPage(
       #changing the age so that a range can be selected
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
       sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
-      actionButton("submit", "Submit"),
-      textOutput("result")
+      actionButton("plotBtn", "Plot"),
+      textOutput("result"), 
     ),
     mainPanel(
       plotOutput("plot1", click = "plot1_click"),
@@ -65,9 +65,12 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
+  filteredData <- reactive({
+    subset(dig.df, AGE >= input$AGE[1] & AGE <= input$AGE[2])
+  })
   rv <- reactiveValues(sliderValue = NULL, buttonClicked = NULL)
   
-  # Observe slider input and update reactiveValues
+  # Observe slider input not working yet: 
   observeEvent(input$sumbit, {
     output$result <- renderText({"Thank You"
     })
@@ -83,19 +86,30 @@ server <- function(input, output, session) {
   })
 
   output$plot1 <- renderPlot({
-    ggplot(data = DIG_sub(),aes(x=DIABP,y=SYSBP)) +
+    plot_data <- filteredData()
+    if(input$plotType == 'scatter'){
+       ggplot(data = DIG_sub(),aes(x =DIABP,y=SYSBP)) +
       geom_point(colour = 'magenta4') +
       theme_minimal()
-  })
+    } else {
 
   #static plot is there a way to improve it?
-  output$plot2 <- renderPlot({
     ggplot(DIG_sub(), aes(x = TRTMT)) +
       geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
       labs(title = 'Number of Patients per Treatment Group',
            x = 'Treatment Group',
            y = 'Total') +
       theme_minimal()
+  }
+  })
+
+  output$plot2 <- renderPlot({
+  ggplot(DIG_sub(), aes(x = TRTMT)) +
+    geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
+    labs(title = 'Number of Patients per Treatment Group',
+         x = 'Treatment Group',
+         y = 'Total') +
+    theme_minimal()
   })
   #survival function
   surv_func <- reactive({
