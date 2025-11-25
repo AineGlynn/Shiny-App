@@ -48,7 +48,9 @@ ui <- fluidPage(
       #sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
       #changing the age so that a range can be selected
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
-      sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE)
+      sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
+      actionButton("submit", "Submit"),
+      textOutput("result")
     ),
     mainPanel(
       plotOutput("plot1", click = "plot1_click"),
@@ -62,9 +64,15 @@ ui <- fluidPage(
 
 
 
-server <- function(input, output) {
-
-
+server <- function(input, output, session) {
+  rv <- reactiveValues(sliderValue = NULL, buttonClicked = NULL)
+  
+  # Observe slider input and update reactiveValues
+  observeEvent(input$sumbit, {
+    output$result <- renderText({"Thank You"
+    })
+  })
+  
   DIG_sub <- reactive({
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
