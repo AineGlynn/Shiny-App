@@ -26,15 +26,15 @@ ui <- fluidPage(
     sidebarPanel(
       radioButtons("plotType","Plot Type:",
                    c(Barchart = "bar", Boxplot = "box")),
-      
+
       conditionalPanel(
         condition = "input.plotType = 'box'",
-        selectInput(inputId = "SEX", 
+        selectInput(inputId = "SEX",
                     label = "Select Gender:",
                     choices = c("Male", "Female"),
                     multiple = TRUE,
                     selected = c("Male", "Female"))),
-      
+
       conditionalPanel(
         condition = "input.plotType = 'bar'",
         sliderInput("BMI",
@@ -44,7 +44,7 @@ ui <- fluidPage(
                     value = c(20, 50))),
 
       #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL),
-      #selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+      selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
       #sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
       #changing the age so that a range can be selected
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
@@ -59,12 +59,12 @@ ui <- fluidPage(
     )
   ),
 )
-  
+
 
 
 server <- function(input, output) {
-  
-  
+
+
   DIG_sub <- reactive({
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
@@ -73,15 +73,15 @@ server <- function(input, output) {
       #filter(TRTMT %in% input$TRTMT)
       filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])
   })
-  
-  output$plot1 <- renderPlot({ 
-    ggplot(data = DIG_sub(),aes(x=DIABP,y=SYSBP)) + 
+
+  output$plot1 <- renderPlot({
+    ggplot(data = DIG_sub(),aes(x=DIABP,y=SYSBP)) +
       geom_point(colour = 'magenta4') +
-      theme_minimal() 
+      theme_minimal()
   })
- 
+
   #static plot is there a way to improve it?
-  output$plot2 <- renderPlot({ 
+  output$plot2 <- renderPlot({
     ggplot(DIG_sub(), aes(x = TRTMT)) +
       geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
       labs(title = 'Number of Patients per Treatment Group',
@@ -92,43 +92,69 @@ server <- function(input, output) {
   #survival function
   surv_func <- reactive({
     survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
-  
+
   #still working on it
   output$plot3 <- renderPlot({
     #digfit = survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())
     #ggsurvplot(surv_func(), data = DIG_sub())
     plot(surv_func()) # need to improve the plot
   })
-  
+
 #clicks:
   output$click_info1 <- renderPrint({
     input$plot1_click
   })
   output$click_info2 <- renderPrint({
     input$plot2_click
-  })  
-  
+  })
+
   # Tables
   output$table1 <- renderDataTable({req(input$plot1_click)
     nearPoints(DIG_sub(), input$plot1_click)})
   output$table2 <- renderDataTable({req(input$plot2_click)
     nearPoints(DIG_sub(), input$plot2_click)})
 }
-   
- 
+
+
 shinyApp(ui, server)
 
-#Trying to make a conditional graph: 
-if (interactive()) {
-  ui <- fluidPage(
-  sidebarPanel(
-    selectInput("plotType", "Plot Type",
-                c(Bar = "Bar", Boxplot = "Boxplot")
-    ),
-    conditionalPanel(
-      condition = 'input.plotType == 'Boxplot'', 
-      selectInput(
-        'breaks', 'Breaks', 
-        c('AGE', 'BMI', '[Custom]' = 'custom')
-      ), 
-    )
+#Trying to make a conditional graph:
+# ui <- fluidPage(
+#   titlePanel("DIG Data Exploration"),
+#   sidebarLayout(
+#     sidebarPanel(
+#     selectInput("plotType", "Plot Type",
+#                 c(Bar = "Bar", Boxplot = "Boxplot")),
+#     selectInput("ageSelect", "AGE Selection:",
+#                 choices = c("AGE", "[Custom]" = "custom")),
+#     
+#     #Section for boxplot:
+#     conditionalPanel(
+#       condition = "input.ageSelect == 'custom'"),
+#       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
+#     )
+#   )
+#   mainPanel(
+#     plotOutput("plot1")
+# )
+# )
+# server <- function(input, output) {
+#   
+#   DIG_sub <- reactive({
+#     dig.df %>%
+#       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2])
+#   })
+#   output$plot1 <- renderPlot({ 
+#     if (input$plotType = "Boxplot"){
+#     ggplot(data = dig.df(),aes(y=AGE)) + 
+#         geom_boxplot(fill = 'magenta4') +
+#       theme_minimal() 
+#     } else {
+#       ggplot(data = dig.df(), aes(x = BMI, y = AGE)) +
+#         geombar()
+#     }
+#   })
+# }
+# shinyApp(ui, server)
+
+
