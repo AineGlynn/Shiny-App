@@ -43,6 +43,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
+  
   DIG_sub <- reactive({
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
@@ -96,3 +97,17 @@ server <- function(input, output) {
  
 shinyApp(ui, server)
 
+#Trying to make a conditional graph: 
+if (interactive()) {
+  ui <- fluidPage(
+  sidebarPanel(
+    selectInput("plotType", "Plot Type",
+                c(Bar = "Bar", Boxplot = "Boxplot")
+    ),
+    conditionalPanel(
+      condition = 'input.plotType == 'Boxplot'', 
+      selectInput(
+        'breaks', 'Breaks', 
+        c('AGE', 'BMI', '[Custom]' = 'custom')
+      ), 
+    )
