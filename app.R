@@ -45,12 +45,12 @@ ui <- fluidPage(
 
       #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL),
       selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-      #sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
+      sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
       #changing the age so that a range can be selected
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
       sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
       actionButton("plotBtn", "Plot"),
-      textOutput("result"), 
+      textOutput("result"),
     ),
     mainPanel(
       plotOutput("plot1", click = "plot1_click"),
@@ -69,13 +69,13 @@ server <- function(input, output, session) {
     subset(dig.df, AGE >= input$AGE[1] & AGE <= input$AGE[2])
   })
   rv <- reactiveValues(sliderValue = NULL, buttonClicked = NULL)
-  
-  # Observe slider input not working yet: 
+
+  # Observe slider input not working yet:
   observeEvent(input$sumbit, {
     output$result <- renderText({"Thank You"
     })
   })
-  
+
   DIG_sub <- reactive({
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
@@ -104,12 +104,11 @@ server <- function(input, output, session) {
   })
 
   output$plot2 <- renderPlot({
-  ggplot(DIG_sub(), aes(x = TRTMT)) +
-    geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
-    labs(title = 'Number of Patients per Treatment Group',
-         x = 'Treatment Group',
-         y = 'Total') +
-    theme_minimal()
+    ggplot(DIG_sub(), aes(y = TRTMT)) +
+      geom_boxplot(fill = "deeppink", colour = 'black', na.rm = TRUE) +
+      labs(title = "Treatment Group",
+           y = "Treatment Group") +
+      theme_classic()
   })
   #survival function
   surv_func <- reactive({
@@ -140,43 +139,59 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
-#Trying to make a conditional graph:
+#Adding boxplots/ barcharts:
+
+#Gender/ Mortaility/ Race:
+# output$plotGender <- renderPlot({
+#   ggplot(dig.df, aes(x = TRTMT, fill = SEX)) +
+#     geom_bar(position = position_dodge(), colour = 'black') 
+#   labs(title = "Gender of Patients in comparison to Treatment Group",
+#        x = "Gender", y = "Treatment Group", fill = "Gender") +
+#     theme_classic()
+# })
+
+
 # ui <- fluidPage(
-#   titlePanel("DIG Data Exploration"),
+#   titlePanel("Baseline Characteristics:"),
 #   sidebarLayout(
 #     sidebarPanel(
-#     selectInput("plotType", "Plot Type",
-#                 c(Bar = "Bar", Boxplot = "Boxplot")),
-#     selectInput("ageSelect", "AGE Selection:",
-#                 choices = c("AGE", "[Custom]" = "custom")),
-#     
-#     #Section for boxplot:
-#     conditionalPanel(
-#       condition = "input.ageSelect == 'custom'"),
-#       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
+#       selectInput("TRTMT", "Placebo:", choices = names(dig.df)),
+#       selectInput("TRTMT", "Treatment Group:", choices = names(dig.df)),
+#       actionButton("refresh", "Refresh Plot")
+#     ),
+#     mainPanel(
+#       plotlyOutput("plot")
 #     )
 #   )
-#   mainPanel(
-#     plotOutput("plot1")
 # )
-# )
-# server <- function(input, output) {
+# 
+# server <- function(input, output, session) {
+#   # Generate heatmap plot
+#   generate_heatmap <- function() {
+#     plot <- plot_ly(
+#       x = dig.df[, input$TRTMT],
+#       y = dig.df[, input$TRTMT],
+#       type = "heatmap",
+#     ) %>% layout(title = input$plot_title)
+#     return(plot)
+#   }
+# 
+# 
+#   output$plot <- renderPlotly({
+#     generate_heatmap()
+#   })
 #   
-#   DIG_sub <- reactive({
-#     dig.df %>%
-#       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2])
+#   # Refresh plot on button click
+#   observeEvent(input$refresh, {
+#     output$plot <- renderPlotly({
+#       generate_heatmap()
+#     })
 #   })
-#   output$plot1 <- renderPlot({ 
-#     if (input$plotType = "Boxplot"){
-#     ggplot(data = dig.df(),aes(y=AGE)) + 
-#         geom_boxplot(fill = 'magenta4') +
-#       theme_minimal() 
-#     } else {
-#       ggplot(data = dig.df(), aes(x = BMI, y = AGE)) +
-#         geombar()
-#     }
-#   })
-# }
-# shinyApp(ui, server)
+# 
+#   }
+#   shinyApp(ui = ui, server = server)
+
+
+
 
 
