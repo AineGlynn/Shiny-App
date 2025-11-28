@@ -7,9 +7,8 @@ library(survival)
 library(survminer)
 
 dig.df <- read_csv("DIG.csv")
-
 dig.df <- dig.df %>%
-  select(ID, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, HYPERTEN, CVD, WHF, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY) %>%
+  select(ID, WHF, STRK, MI, DIABETES, ANGINA, HYPERTEN, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY) %>%
   mutate(SEX = factor(SEX, 
                       levels = c(1, 2), 
                       labels = c('Male', 'Female')), 
@@ -44,8 +43,14 @@ ui <- fluidPage(
 
       #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = NULL),
       selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-      sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
-      #changing the age so that a range can be selected
+      sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),#changing the age so that a range can be selected
+       checkboxInput("WHF", "Worsening Heart Failure", TRUE),  verbatimTextOutput("value"),
+       checkboxInput("STRK", "Stroke", TRUE),  verbatimTextOutput("value"),
+       checkboxInput("MI", "Heart Attack", TRUE),  verbatimTextOutput("value"),
+       checkboxInput("DIABETES", "Diabetes", TRUE),  verbatimTextOutput("value"),
+       checkboxInput("ANGINA", "Angina", TRUE),  verbatimTextOutput("value"),
+       checkboxInput("HYPERTEN", "Hypertension", TRUE),  verbatimTextOutput("value"),
+    #  checkboxInput("CVD", "CVD", TRUE),  verbatimTextOutput("value"),
       sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
       sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
       actionButton("plotBtn", "Plot"),
@@ -58,9 +63,8 @@ ui <- fluidPage(
       dataTableOutput("table1"),
       dataTableOutput("table2")
     )
-  ),
+  )
 )
-
 
 
 server <- function(input, output, session) {
@@ -74,26 +78,43 @@ server <- function(input, output, session) {
     output$result <- renderText({"Thank You"
     })
   })
+  #React for plot 1
+  plot2react <- reactive({
+    dig.df %>%
+      filter(SEX %in% input$SEX) %>%
+      filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
+      filter(BMI >= input$BMI[1] & BMI <= input$BMI[2]) %>%
+       filter(WHF %in% input$WHF) %>%
+       filter(STRK %in% input$STRK) %>%
+       filter(DIABETES %in% input$DIABETES) %>%
+       filter(ANGINA %in% input$ANGINA) %>%
+       filter(MI %in% input$MI) %>%
+       filter(HYPERTEN %in% input$HYPERTEN) %>%
+     # filter(CVD %in% input$CVD) %>%
+      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])
+  })
 
   DIG_sub <- reactive({
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
       filter(BMI >= input$BMI[1] & BMI <= input$BMI[2]) %>%
-      #filter(TRTMT %in% input$TRTMT)
       filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])
   })
-
+  
+  
+  
+  
   output$plot1 <- renderPlot({
     plot_data <- filteredData()
-    if(input$plotType == 'scatter'){
-       ggplot(data = DIG_sub(),aes(x =DIABP,y=SYSBP)) +
-      geom_point(colour = 'magenta4') +
+    if(input$plotType == 'box'){
+       ggplot(data = DIG_sub(),aes(x =TRTMT)) +
+        geom_boxplot(colour = 'magenta4') +
       theme_minimal()
     } else {
 
   #static plot is there a way to improve it?
-    ggplot(DIG_sub(), aes(x = TRTMT)) +
+    ggplot(plot2react(), aes(x = TRTMT)) +
       geom_bar(colour = 'black', fill = c('darkorchid', 'darkblue'), alpha = 0.6, width = 0.4) +
       labs(title = 'Number of Patients per Treatment Group',
            x = 'Treatment Group',
@@ -102,13 +123,6 @@ server <- function(input, output, session) {
   }
   })
 
-  output$plot2 <- renderPlot({
-    ggplot(DIG_sub(), aes(y = TRTMT)) +
-      geom_boxplot(fill = "deeppink", colour = 'black', na.rm = TRUE) +
-      labs(title = "Treatment Group",
-           y = "Treatment Group") +
-      theme_classic()
-  })
   #survival function
   surv_func <- reactive({
     survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
@@ -151,7 +165,7 @@ shinyApp(ui, server)
 
 #1. I want to change the slider options so make a dataset that exactly matches these
 #2. it should just compare against tretament group. 
-#3. ideally it is a boxplot not heatmap
+#3. ideally it is a b
 
 # ui <- fluidPage(
 #   titlePanel("Baseline Characteristics:"),
