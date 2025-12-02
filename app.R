@@ -5,6 +5,7 @@ library(ggplot2)
 library(plotly)
 library(survival)
 library(survminer)
+library(bslib)
 
 dig.df <- read_csv("DIG.csv")
 dig.df <- dig.df %>%
@@ -19,51 +20,74 @@ dig.df <- dig.df %>%
 
 
 ui <- fluidPage(
-  titlePanel("DIG Data Exploration"),
-  sidebarLayout(
-    sidebarPanel(
-      radioButtons("plotType","Plot Type:",
-                   c(scatterplot = "scatter", Barchart = "bar")),
-
-      conditionalPanel(
-        condition = "input.plotType = 'box'",
-        selectInput(inputId = "SEX",
-                    label = "Select Gender:",
-                    choices = c("Male", "Female"),
-                    multiple = TRUE,
-                    selected = c("Male", "Female"))),
-
-      conditionalPanel(
-        condition = "input.plotType = 'bar'",
-        sliderInput("BMI",
-                    "BMI Range:",
-                    min = 14,
-                    max = 65,
-                    value = c(20, 50))),
-
-      checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = TRUE),
-      selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-      sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),#changing the age so that a range can be selected
-       checkboxInput("WHF", "Worsening Heart Failure", TRUE),  verbatimTextOutput("value"),
-       checkboxInput("STRK", "Stroke", TRUE),  verbatimTextOutput("value"),
-       checkboxInput("MI", "Heart Attack", TRUE),  verbatimTextOutput("value"),
-       checkboxInput("DIABETES", "Diabetes", TRUE),  verbatimTextOutput("value"),
-       checkboxInput("ANGINA", "Angina", TRUE),  verbatimTextOutput("value"),
-       checkboxInput("HYPERTEN", "Hypertension", TRUE),  verbatimTextOutput("value"),
-    #  checkboxInput("CVD", "CVD", TRUE),  verbatimTextOutput("value"),
-      sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
-      sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
-      actionButton("plotBtn", "Plot"),
-      textOutput("result")
-    ),
-    mainPanel(
-      plotlyOutput("plot"),
-      plotlyOutput("plot2"),
-      plotlyOutput("plot4"),
-      dataTableOutput("table1"),
-      dataTableOutput("table2")
-    )
-  )
+  navset_tab( 
+    #create tabs for different aspects of data exploration
+    nav_panel("Baseline", p("Plots of Baseline Characteristics",
+                            titlePanel("DIG Baseline Characteristics"),
+                            sidebarLayout(
+                              sidebarPanel(
+                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+                                sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
+                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
+                                
+                                ),
+                              mainPanel(
+                                plotlyOutput("plot")
+                              ))
+                            )), 
+    nav_panel("Outcomes", p("Plots of Outcome Variable",
+                            titlePanel("Outcomes of DIG in different categories"),
+                            sidebarLayout(
+                              sidebarPanel(
+                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+                                checkboxInput("WHF", "Worsening Heart Failure", TRUE),  verbatimTextOutput("value"),
+                                checkboxInput("STRK", "Stroke", TRUE),  verbatimTextOutput("value"),
+                                checkboxInput("MI", "Heart Attack", TRUE),  verbatimTextOutput("value"),
+                                checkboxInput("DIABETES", "Diabetes", TRUE),  verbatimTextOutput("value"),
+                                checkboxInput("ANGINA", "Angina", TRUE),  verbatimTextOutput("value"),
+                                checkboxInput("HYPERTEN", "Hypertension", TRUE),  verbatimTextOutput("value")
+                              ),
+                              mainPanel(
+                                plotlyOutput("plot4")
+                              )
+                            )
+                            )), 
+    nav_panel("Survival", p("Survival Plots",
+                            titlePanel("Survival Plots of Patients"),
+                            sidebarLayout(
+                              sidebarPanel(
+                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+                                sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE)
+                              ),
+                              mainPanel(
+                                plotOutput("plot3")
+                              )
+                            )
+                            
+                            )), 
+    nav_menu( 
+      "Other links", 
+      nav_panel("D", "Panel D content"), 
+      "----", 
+      "Description:", 
+      nav_item( 
+        a("Shiny", href = "https://shiny.posit.co", target = "_blank") 
+      ), 
+    ), 
+  ), 
+  id = "tab" 
+  
+  #   mainPanel(
+  #     #plotlyOutput("plot"),
+  #     plotlyOutput("plot2"),
+  #     plotlyOutput("plot4"),
+  #     dataTableOutput("table1"),
+  #     dataTableOutput("table2")
+  #   )
+  # )
 )
 
 server <- function(input, output, session) {
