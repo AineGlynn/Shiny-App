@@ -9,14 +9,18 @@ library(bslib)
 
 dig.df <- read_csv("DIG.csv")
 dig.df <- dig.df %>%
-  select(ID, WHF, STRK, MI, DIABETES, ANGINA, HYPERTEN, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY) %>%
+  select(ID, WHF, STRK, MI, DIABETES, ANGINA, HYPERTEN, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY, CVD
+         ) %>%
   mutate(SEX = factor(SEX, 
                       levels = c(1, 2), 
                       labels = c('Male', 'Female')), 
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
-         Death_Month = round(DEATHDAY/30)) 
+         Death_Month = round(DEATHDAY/30),
+         CVD = factor(CVD,
+                      levels = c(1,0),
+                      labels = c("CVD", "No CVD"))) 
 
 
 ui <- fluidPage(
@@ -61,10 +65,12 @@ ui <- fluidPage(
                               sidebarPanel(
                                 checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-                                sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE)
+                                sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
+                                checkboxGroupInput("CVD", "CVD", choices = c("CVD", "No CVD"), selected = c("CVD", "No CVD"))
                               ),
                               mainPanel(
-                                plotOutput("surv1")
+                                plotOutput("surv1"),
+                                plotOutput("surv2")
                               )
                             )
                             
@@ -111,8 +117,8 @@ server <- function(input, output, session) {
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2])
   })
 
-  #React for plot 2
-  plot2react <- reactive({
+  #React for plot count bar chart for each group
+  plotbarreact <- reactive({
     dig.df %>%
       filter(TRTMT == input$TRTMT) %>%
       filter(WHF %in% input$WHF) %>%
@@ -126,11 +132,18 @@ server <- function(input, output, session) {
     dig.df %>%
       filter(SEX %in% input$SEX) %>%
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
-      filter(BMI >= input$BMI[1] & BMI <= input$BMI[2]) %>%
-      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])
+      filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
+  
+ surv_filt <- reactive({
+   dig.df %>%
+     filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])%>%
+     filter(TRTMT == input$TRTMT) %>%
+     filter(SEX %in% input$SEX) %>%
+     filter(CVD == input$CVD)
+ })
 
-  generate_BMIboxplot <- function () {
+  generate_BMIboxplot <- function() {
     df1 <- plotBMIreact()
     plot_ly(data = df1,
               x = ~TRTMT,
@@ -153,7 +166,7 @@ server <- function(input, output, session) {
   }
 
   generate_bar <- function() {
-    df2 <- plot2react() %>%
+    df2 <- plotbarreact() %>%
       count(TRTMT)
     plot_ly(data = df2,
             x = ~TRTMT,
@@ -162,11 +175,8 @@ server <- function(input, output, session) {
             color = ~TRTMT) %>%
       layout(title = "Treatment Group")
   }
-
-  #survival function
-  surv_func <- reactive({
-    survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
-
+  
+  
   
   #PLOTS
   output$treatbar <- renderPlotly({
@@ -181,12 +191,31 @@ server <- function(input, output, session) {
     generate_AGEboxplot()
   })
 
-#survival plot
+  # #survival function
+  # surv_func <- reactive({
+  #   survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
+
+# #survival plot
+#   output$surv1 <- renderPlot({
+#     #digfit = survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())
+#     #ggsurvplot(surv_func(), data = DIG_sub())
+#     plot(surv_func()) # need to improve the plot
+#   })
+  
+#Survival Plots
   output$surv1 <- renderPlot({
-    #digfit = survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())
-    #ggsurvplot(surv_func(), data = DIG_sub())
-    plot(surv_func()) # need to improve the plot
-  })
+    fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt()) 
+    
+    ggsurvplot(fit,data=surv_filt(),pval=TRUE, palette = c("orchid2"), title = "Survival Times of All Participants")
+  })  
+  
+  output$surv2 <- renderPlot({
+    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt()) 
+    
+    ggsurvplot(fit2,data=surv_filt(),pval=TRUE, palette = c("lightblue", "hotpink"), title = "Survival Times in Treatment Groups")
+  })  
+  
+  
 
 #clicks:
   output$click_info1 <- renderPrint({
