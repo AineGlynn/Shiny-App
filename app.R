@@ -33,7 +33,8 @@ ui <- fluidPage(
                                 
                                 ),
                               mainPanel(
-                                plotlyOutput("plot")
+                                plotlyOutput("treatbar"),
+                                plotlyOutput("agebox")
                               ))
                             )), 
     nav_panel("Outcomes", p("Plots of Outcome Variable",
@@ -42,15 +43,15 @@ ui <- fluidPage(
                               sidebarPanel(
                                 checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-                                checkboxInput("WHF", "Worsening Heart Failure", TRUE),  verbatimTextOutput("value"),
-                                checkboxInput("STRK", "Stroke", TRUE),  verbatimTextOutput("value"),
-                                checkboxInput("MI", "Heart Attack", TRUE),  verbatimTextOutput("value"),
-                                checkboxInput("DIABETES", "Diabetes", TRUE),  verbatimTextOutput("value"),
-                                checkboxInput("ANGINA", "Angina", TRUE),  verbatimTextOutput("value"),
-                                checkboxInput("HYPERTEN", "Hypertension", TRUE),  verbatimTextOutput("value")
+                                checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
+                                checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
+                                checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
+                                checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
+                                checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
+                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value")
                               ),
                               mainPanel(
-                                plotlyOutput("plot4")
+                                plotlyOutput("bmibox") #this needs to be moved above, just a placeholder
                               )
                             )
                             )), 
@@ -63,7 +64,7 @@ ui <- fluidPage(
                                 sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE)
                               ),
                               mainPanel(
-                                plotOutput("plot3")
+                                plotOutput("surv1")
                               )
                             )
                             
@@ -166,19 +167,22 @@ server <- function(input, output, session) {
   surv_func <- reactive({
     survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
 
-  output$plot <- renderPlotly({
+  
+  #PLOTS
+  output$treatbar <- renderPlotly({
     generate_bar()
   })
 
-  output$plot2 <- renderPlotly({
+  output$bmibox <- renderPlotly({
     generate_BMIboxplot()
   })
-
-  output$plot4 <- renderPlotly({
+#baseline age boxplot
+  output$agebox <- renderPlotly({
     generate_AGEboxplot()
   })
-  #still working on it
-  output$plot3 <- renderPlot({
+
+#survival plot
+  output$surv1 <- renderPlot({
     #digfit = survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())
     #ggsurvplot(surv_func(), data = DIG_sub())
     plot(surv_func()) # need to improve the plot
