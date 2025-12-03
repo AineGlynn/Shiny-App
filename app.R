@@ -16,7 +16,10 @@ dig.df <- dig.df %>%
                       labels = c('Male', 'Female')), 
          HOSP = factor(HOSP, 
                       levels = c(0, 1), 
-                      labels = c('Not Hospitilized', 'Hospitilized')),
+                      labels = c('Not Hospitalized', 'Hospitalized')),
+         WHF = factor(WHF, 
+                       levels = c(0, 1), 
+                       labels = c('Not WHF', 'WHF')),
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
@@ -34,13 +37,19 @@ ui <- fluidPage(
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
                                 sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
-                                checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
-                                checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
-                                checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
-                                checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
-                                checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
-                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
-                                checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value")
+                                # checkboxGroupInput(
+                                #   "Worsening Heart Failure",
+                                #   "WHF:",
+                                #   choices = c("Not WHF", "WHF"),
+                                #   selected = c("Not WHF","WHF")  # select all by default
+                                # ),
+                                #checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
+                                # checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
+                                # checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
+                                # checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
+                                # checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
+                                # checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
+                                # checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value")
 
                                 ),
                               mainPanel(
@@ -54,14 +63,14 @@ ui <- fluidPage(
                               sidebarPanel(
                                 checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-                                checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
-                                checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
-                                checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
-                                checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
-                                checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
-                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
-                                checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value"),
-                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitilized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                            ),
+                                # checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
+                                # checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
+                                # checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
+                                # checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
+                                # checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
+                                # checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
+                                # checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value"),
+                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                            ),
                               mainPanel(
                                 plotlyOutput("hospitalization"),
                                 plotlyOutput("bmibox")#this needs to be moved above, just a placeholder
@@ -79,7 +88,8 @@ ui <- fluidPage(
                               ),
                               mainPanel(
                                 plotOutput("surv1"),
-                                plotOutput("surv2")
+                                plotOutput("surv2"),
+                                dataTableOutput("table1")
                               )
                             )
 
@@ -129,21 +139,21 @@ server <- function(input, output, session) {
   #React for plot count bar chart for each group
   plot2react <- reactive({
     dig.df %>%
-      filter(TRTMT == input$TRTMT) %>%
-      filter(WHF %in% input$WHF) %>%
-      filter(STRK %in% input$STRK) %>%
-      filter(DIABETES %in% input$DIABETES) %>%
-      filter(ANGINA %in% input$ANGINA) %>%
-      filter(MI %in% input$MI) %>%
-      filter(CVD %in% input$CVD)
+      filter(TRTMT == input$TRTMT) #%>%
+      # filter(WHF %in% input$WHF) %>%
+      # filter(STRK %in% input$STRK) %>%
+      # filter(DIABETES %in% input$DIABETES) %>%
+      # filter(ANGINA %in% input$ANGINA) %>%
+      # filter(MI %in% input$MI) %>%
+      # filter(CVD %in% input$CVD)
   })
 
   #Hospitalization React:
   hospitalizationReact <- reactive({
       dig.df %>%
         filter(TRTMT == input$TRTMT) %>%
-      filter(HOSP %in% input$HOSP)  
-      # filter(WHF %in% input$WHF) 
+      filter(HOSP %in% input$HOSP) # %>%
+      # filter(WHF %in% input$WHF)%>%
       #   filter(STRK %in% input$STRK) %>%
       #   filter(DIABETES %in% input$DIABETES) %>%
       #   filter(ANGINA %in% input$ANGINA) %>%
@@ -255,12 +265,10 @@ server <- function(input, output, session) {
 
 
   # Tables
-  output$table1 <- renderDataTable({req(input$plot1_click)
-    nearPoints(DIG_sub(), input$plot1_click)})
-  output$table2 <- renderDataTable({req(input$plot2_click)
-    nearPoints(DIG_sub(), input$plot2_click)})
+  output$table1 <- renderDataTable({ 
+    surv_filt()
+  })
 }
 
 
 shinyApp(ui, server)
-
