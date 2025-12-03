@@ -9,11 +9,14 @@ library(bslib)
 
 dig.df <- read_csv("DIG.csv")
 dig.df <- dig.df %>%
-  select(ID, WHF, STRK, MI, DIABETES, ANGINA, HYPERTEN, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY, CVD
+  select(ID, WHF, HOSP, STRK,CVD, MI, DIABETES, ANGINA, HYPERTEN, TRTMT, AGE, SEX, BMI, KLEVEL, CREAT, DIABP, SYSBP, DIG, HOSP, HOSPDAYS, DEATH, DEATHDAY, CVD
          ) %>%
   mutate(SEX = factor(SEX, 
                       levels = c(1, 2), 
                       labels = c('Male', 'Female')), 
+         HOSP = factor(HOSP, 
+                      levels = c(0, 1), 
+                      labels = c('Not Hospitilized', 'Hospitilized')),
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
@@ -52,10 +55,12 @@ ui <- fluidPage(
                                 checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
                                 checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
                                 checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
-                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value")
-                              ),
+                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
+                                checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value"),
+                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitilized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                            ),
                               mainPanel(
-                                plotlyOutput("bmibox") #this needs to be moved above, just a placeholder
+                                plotlyOutput("hospitalization"),
+                                plotlyOutput("bmibox")#this needs to be moved above, just a placeholder
                               )
                             )
                             )), 
@@ -125,7 +130,21 @@ server <- function(input, output, session) {
       filter(STRK %in% input$STRK) %>%
       filter(DIABETES %in% input$DIABETES) %>%
       filter(ANGINA %in% input$ANGINA) %>%
+      filter(CVD %in% input$CVD) %>%
       filter(MI %in% input$MI)
+  })
+  
+  #Hospitalization React:
+  hospitalizationReact <- reactive({
+    dig.df %>%
+      filter(TRTMT == input$TRTMT) %>%
+      filter(HOSP == input$HOSP) %>%
+       filter(WHF %in% input$WHF) %>%
+       filter(STRK %in% input$STRK) %>%
+       filter(DIABETES %in% input$DIABETES) %>%
+       filter(ANGINA %in% input$ANGINA) %>%
+       filter(CVD %in% input$CVD) %>%
+       filter(MI %in% input$MI)
   })
 
   DIG_sub <- reactive({
@@ -176,7 +195,16 @@ server <- function(input, output, session) {
       layout(title = "Treatment Group")
   }
   
-  
+#Hospitalization PLots: 
+  generate_hospitalization <- function() {
+    df3 <- hospitalizationReact() %>%
+      count(TRTMT)
+    plot_ly(data = df3,
+            x = ~TRTMT,
+            y = ~n,
+            type = "bar",
+            color = ~TRTMT)
+  }
   
   #PLOTS
   output$treatbar <- renderPlotly({
@@ -186,11 +214,14 @@ server <- function(input, output, session) {
   output$bmibox <- renderPlotly({
     generate_BMIboxplot()
   })
-#baseline age boxplot
+
   output$agebox <- renderPlotly({
     generate_AGEboxplot()
   })
-
+  output$hospitalization <- renderPlotly({
+    generate_hospitalization()
+  })
+  
   # #survival function
   # surv_func <- reactive({
   #   survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
@@ -217,13 +248,7 @@ server <- function(input, output, session) {
   
   
 
-#clicks:
-  output$click_info1 <- renderPrint({
-    input$plot1_click
-  })
-  output$click_info2 <- renderPrint({
-    input$plot2_click
-  })
+
 
   # Tables
   output$table1 <- renderDataTable({req(input$plot1_click)
