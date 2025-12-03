@@ -20,14 +20,11 @@ dig.df <- dig.df %>%
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
-         Death_Month = round(DEATHDAY/30),
-         CVD = factor(CVD,
-                      levels = c(1,0),
-                      labels = c("CVD", "No CVD"))) 
+         Death_Month = round(DEATHDAY/30)) 
 
 
 ui <- fluidPage(
-  navset_tab( 
+  navset_tab(
     #create tabs for different aspects of data exploration
     nav_panel("Baseline", p("Plots of Baseline Characteristics",
                             titlePanel("DIG Baseline Characteristics"),
@@ -36,14 +33,21 @@ ui <- fluidPage(
                                 checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
-                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
-                                
+                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
+                                checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
+                                checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
+                                checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
+                                checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
+                                checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
+                                checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
+                                checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value")
+
                                 ),
                               mainPanel(
                                 plotlyOutput("treatbar"),
                                 plotlyOutput("agebox")
                               ))
-                            )), 
+                            )),
     nav_panel("Outcomes", p("Plots of Outcome Variable",
                             titlePanel("Outcomes of DIG in different categories"),
                             sidebarLayout(
@@ -63,7 +67,7 @@ ui <- fluidPage(
                                 plotlyOutput("bmibox")#this needs to be moved above, just a placeholder
                               )
                             )
-                            )), 
+                            )),
     nav_panel("Survival", p("Survival Plots",
                             titlePanel("Survival Plots of Patients"),
                             sidebarLayout(
@@ -78,20 +82,20 @@ ui <- fluidPage(
                                 plotOutput("surv2")
                               )
                             )
-                            
-                            )), 
-    nav_menu( 
-      "Other links", 
-      nav_panel("D", "Panel D content"), 
-      "----", 
-      "Description:", 
-      nav_item( 
-        a("Shiny", href = "https://shiny.posit.co", target = "_blank") 
-      ), 
-    ), 
-  ), 
-  id = "tab" 
-  
+
+                            )),
+    nav_menu(
+      "Other links",
+      nav_panel("D", "Panel D content"),
+      "----",
+      "Description:",
+      nav_item(
+        a("Shiny", href = "https://shiny.posit.co", target = "_blank")
+      ),
+    ),
+  ),
+  id = "tab"
+
   #   mainPanel(
   #     #plotlyOutput("plot"),
   #     plotlyOutput("plot2"),
@@ -123,29 +127,29 @@ server <- function(input, output, session) {
   })
 
   #React for plot count bar chart for each group
-  plotbarreact <- reactive({
+  plot2react <- reactive({
     dig.df %>%
       filter(TRTMT == input$TRTMT) %>%
       filter(WHF %in% input$WHF) %>%
       filter(STRK %in% input$STRK) %>%
       filter(DIABETES %in% input$DIABETES) %>%
       filter(ANGINA %in% input$ANGINA) %>%
-      filter(CVD %in% input$CVD) %>%
-      filter(MI %in% input$MI)
+      filter(MI %in% input$MI) %>%
+      filter(CVD %in% input$CVD)
   })
-  
+
   #Hospitalization React:
   hospitalizationReact <- reactive({
-    dig.df %>%
-      filter(TRTMT == input$TRTMT) %>%
-      filter(HOSP == input$HOSP) %>%
-       filter(WHF %in% input$WHF) %>%
-       filter(STRK %in% input$STRK) %>%
-       filter(DIABETES %in% input$DIABETES) %>%
-       filter(ANGINA %in% input$ANGINA) %>%
-       filter(CVD %in% input$CVD) %>%
-       filter(MI %in% input$MI)
-  })
+      dig.df %>%
+        filter(TRTMT == input$TRTMT) %>%
+      filter(HOSP %in% input$HOSP)  
+      # filter(WHF %in% input$WHF) 
+      #   filter(STRK %in% input$STRK) %>%
+      #   filter(DIABETES %in% input$DIABETES) %>%
+      #   filter(ANGINA %in% input$ANGINA) %>%
+      #   filter(MI %in% input$MI) %>%
+      #   filter(CVD %in% input$CVD)
+    })
 
   DIG_sub <- reactive({
     dig.df %>%
@@ -153,7 +157,7 @@ server <- function(input, output, session) {
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
       filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
-  
+
  surv_filt <- reactive({
    dig.df %>%
      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])%>%
@@ -185,7 +189,7 @@ server <- function(input, output, session) {
   }
 
   generate_bar <- function() {
-    df2 <- plotbarreact() %>%
+    df2 <- plot2react() %>%
       count(TRTMT)
     plot_ly(data = df2,
             x = ~TRTMT,
@@ -194,8 +198,8 @@ server <- function(input, output, session) {
             color = ~TRTMT) %>%
       layout(title = "Treatment Group")
   }
-  
-#Hospitalization PLots: 
+
+#Hospitalization PLots:
   generate_hospitalization <- function() {
     df3 <- hospitalizationReact() %>%
       count(TRTMT)
@@ -205,7 +209,7 @@ server <- function(input, output, session) {
             type = "bar",
             color = ~TRTMT)
   }
-  
+
   #PLOTS
   output$treatbar <- renderPlotly({
     generate_bar()
@@ -221,7 +225,7 @@ server <- function(input, output, session) {
   output$hospitalization <- renderPlotly({
     generate_hospitalization()
   })
-  
+
   # #survival function
   # surv_func <- reactive({
   #   survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
@@ -232,21 +236,21 @@ server <- function(input, output, session) {
 #     #ggsurvplot(surv_func(), data = DIG_sub())
 #     plot(surv_func()) # need to improve the plot
 #   })
-  
+
 #Survival Plots
   output$surv1 <- renderPlot({
-    fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt()) 
-    
+    fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt())
+
     ggsurvplot(fit,data=surv_filt(),pval=TRUE, palette = c("orchid2"), title = "Survival Times of All Participants")
-  })  
-  
+  })
+
   output$surv2 <- renderPlot({
-    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt()) 
-    
+    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt())
+
     ggsurvplot(fit2,data=surv_filt(),pval=TRUE, palette = c("lightblue", "hotpink"), title = "Survival Times in Treatment Groups")
-  })  
-  
-  
+  })
+
+
 
 
 
@@ -260,32 +264,3 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
-#Adding boxplots/ barcharts:
-
-
-#1. Have boxplot -unsure if working 
-#2. will else work as they are on different scales (counts and range of age/ bmi)
-#3. Else is not working/ 
-
-
-
-  # generate_bar <- function() {
-  #   if(input$plotType == 'bar'){
-  #   df <- plot2react() %>%
-  #     count(TRTMT)
-  #   plot_ly(data = df,
-  #           x = ~TRTMT,
-  #           y = ~n,
-  #           type = "bar",
-  #           color = ~TRTMT) %>%
-  #     layout(title = "Treatment Group")
-  # } else {
-  # generate_box <- function(){
-  #   df <- DIG_sub() %>%
-  #   plot_ly(data = df,
-  #           x = ~TRTMT,
-  #           y = ~BMI,
-  #           type = "box",
-  #           color = ~TRTMT) %>%
-  #     layout(title = "Treatment Group")
-  # }
