@@ -20,6 +20,24 @@ dig.df <- dig.df %>%
          WHF = factor(WHF, 
                        levels = c(0, 1), 
                        labels = c('Not WHF', 'WHF')),
+         CVD = factor(CVD, 
+                      levels = c(0, 1), 
+                      labels = c('No CVD', 'CVD')),
+         STRK = factor(STRK, 
+                      levels = c(0, 1), 
+                      labels = c('No Stroke', 'Stroke')),
+         MI = factor(MI, 
+                      levels = c(0, 1), 
+                      labels = c('No MI', 'MI')),
+         DIABETES = factor(DIABETES, 
+                      levels = c(0, 1), 
+                      labels = c('No Diabetes', 'Diabetes')),
+         ANGINA = factor(ANGINA, 
+                      levels = c(0, 1), 
+                      labels = c('No Angina', 'Angina')),
+         HYPERTEN = factor(HYPERTEN, 
+                      levels = c(0, 1), 
+                      labels = c('No Hypertension', 'Hypertension')),
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
@@ -51,7 +69,7 @@ ui <- fluidPage(
                                 # checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
                                 # checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value")
 
-                                ),
+                                )),
                               mainPanel(
                                 plotlyOutput("treatbar"),
                                 plotlyOutput("agebox")
@@ -63,20 +81,20 @@ ui <- fluidPage(
                               sidebarPanel(
                                 checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
-                                # checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
-                                # checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
-                                # checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
-                                # checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
-                                # checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
-                                # checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
-                                # checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value"),
-                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                            ),
-                              mainPanel(
+                                selectInput(inputId = "WHF", label = "Worsening Heart Failure:", choices = c("No WHF", "WHF"), multiple = FALSE, selected = "No WHF"),                            
+                                selectInput(inputId = "STRK", label = "Stroke:", choices = c("No Stroke", "Stroke"), multiple = FALSE, selected = "No Stroke"),                            
+                                selectInput(inputId = "MI", label = "Heart Attack:", choices = c("No Heart Attack", "Heart Attack"), multiple = FALSE, selected = "No Heart Attack"),                            
+                                selectInput(inputId = "DIABETES", label = "Diabetes:", choices = c("No Diabetes", "Diabetes"), multiple = FALSE, selected = "No Diabetes"),                            
+                                selectInput(inputId = "ANGINA", label = "Angina:", choices = c("No Angina", "Angina"), multiple = FALSE, selected = "No Angina"),                           
+                                selectInput(inputId = "HYPERTEN", label = "Hypertension:", choices = c("No Hypertension", "Hypertension"), multiple = FALSE, selected = "No Hypertension"),  
+                                selectInput(inputId = "CVD", label = "Cardiovascular Disease:", choices = c("No CVD", "CVD"), multiple = FALSE, selected = "No CVD"),
+                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                        
+                                mainPanel(
                                 plotlyOutput("hospitalization"),
                                 plotlyOutput("bmibox")#this needs to be moved above, just a placeholder
                               )
                             )
-                            )),
+                            ))),
     nav_panel("Survival", p("Survival Plots",
                             titlePanel("Survival Plots of Patients"),
                             sidebarLayout(
@@ -102,8 +120,7 @@ ui <- fluidPage(
       nav_item(
         a("Shiny", href = "https://shiny.posit.co", target = "_blank")
       ),
-    ),
-  ),
+    )
   id = "tab"
 
   #   mainPanel(
@@ -152,13 +169,13 @@ server <- function(input, output, session) {
   hospitalizationReact <- reactive({
       dig.df %>%
         filter(TRTMT == input$TRTMT) %>%
-      filter(HOSP %in% input$HOSP) # %>%
-      # filter(WHF %in% input$WHF)%>%
-      #   filter(STRK %in% input$STRK) %>%
-      #   filter(DIABETES %in% input$DIABETES) %>%
-      #   filter(ANGINA %in% input$ANGINA) %>%
-      #   filter(MI %in% input$MI) %>%
-      #   filter(CVD %in% input$CVD)
+       filter(HOSP %in% input$HOSP)  %>%
+       filter(WHF %in% input$WHF)%>%
+         filter(STRK %in% input$STRK) %>%
+         filter(DIABETES %in% input$DIABETES) %>%
+        filter(ANGINA %in% input$ANGINA) %>%
+         filter(MI %in% input$MI) %>%
+         filter(CVD %in% input$CVD)
     })
 
   DIG_sub <- reactive({
