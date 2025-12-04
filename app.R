@@ -55,21 +55,15 @@ ui <- fluidPage(
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
                                 sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
-                                # checkboxGroupInput(
-                                #   "Worsening Heart Failure",
-                                #   "WHF:",
-                                #   choices = c("Not WHF", "WHF"),
-                                #   selected = c("Not WHF","WHF")  # select all by default
-                                # ),
-                                #checkboxInput("WHF", "Worsening Heart Failure"),  verbatimTextOutput("value"),
-                                # checkboxInput("STRK", "Stroke"),  verbatimTextOutput("value"),
-                                # checkboxInput("MI", "Heart Attack"),  verbatimTextOutput("value"),
-                                # checkboxInput("DIABETES", "Diabetes"),  verbatimTextOutput("value"),
-                                # checkboxInput("ANGINA", "Angina"),  verbatimTextOutput("value"),
-                                # checkboxInput("HYPERTEN", "Hypertension"),  verbatimTextOutput("value"),
-                                # checkboxInput("CVD", "Cardiovascular Disease"),  verbatimTextOutput("value")
-
-                                )),
+                                selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
+                                selectInput(inputId = "WHF", label = "Worsening Heart Failure:", choices = c("No WHF", "WHF"), multiple = FALSE, selected = "No WHF"),                            
+                                selectInput(inputId = "STRK", label = "Stroke:", choices = c("No Stroke", "Stroke"), multiple = FALSE, selected = "No Stroke"),                            
+                                selectInput(inputId = "MI", label = "Heart Attack:", choices = c("No Heart Attack", "Heart Attack"), multiple = FALSE, selected = "No Heart Attack"),                            
+                                selectInput(inputId = "DIABETES", label = "Diabetes:", choices = c("No Diabetes", "Diabetes"), multiple = FALSE, selected = "No Diabetes"),                            
+                                selectInput(inputId = "ANGINA", label = "Angina:", choices = c("No Angina", "Angina"), multiple = FALSE, selected = "No Angina"),                           
+                                selectInput(inputId = "HYPERTEN", label = "Hypertension:", choices = c("No Hypertension", "Hypertension"), multiple = FALSE, selected = "No Hypertension"),  
+                                selectInput(inputId = "CVD", label = "Cardiovascular Disease:", choices = c("No CVD", "CVD"), multiple = FALSE, selected = "No CVD")
+                                ),
                               mainPanel(
                                 plotlyOutput("treatbar"),
                                 plotlyOutput("agebox")
@@ -79,7 +73,7 @@ ui <- fluidPage(
                             titlePanel("Outcomes of DIG in different categories"),
                             sidebarLayout(
                               sidebarPanel(
-                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group", choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 selectInput(inputId = "WHF", label = "Worsening Heart Failure:", choices = c("No WHF", "WHF"), multiple = FALSE, selected = "No WHF"),                            
                                 selectInput(inputId = "STRK", label = "Stroke:", choices = c("No Stroke", "Stroke"), multiple = FALSE, selected = "No Stroke"),                            
@@ -88,13 +82,15 @@ ui <- fluidPage(
                                 selectInput(inputId = "ANGINA", label = "Angina:", choices = c("No Angina", "Angina"), multiple = FALSE, selected = "No Angina"),                           
                                 selectInput(inputId = "HYPERTEN", label = "Hypertension:", choices = c("No Hypertension", "Hypertension"), multiple = FALSE, selected = "No Hypertension"),  
                                 selectInput(inputId = "CVD", label = "Cardiovascular Disease:", choices = c("No CVD", "CVD"), multiple = FALSE, selected = "No CVD"),
-                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                        
+                                selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                       
+                              ),
+                              
                                 mainPanel(
                                 plotlyOutput("hospitalization"),
                                 plotlyOutput("bmibox")#this needs to be moved above, just a placeholder
                               )
                             )
-                            ))),
+                            )),
     nav_panel("Survival", p("Survival Plots",
                             titlePanel("Survival Plots of Patients"),
                             sidebarLayout(
@@ -120,7 +116,8 @@ ui <- fluidPage(
       nav_item(
         a("Shiny", href = "https://shiny.posit.co", target = "_blank")
       ),
-    )
+      ),
+    ),
   id = "tab"
 
   #   mainPanel(
@@ -156,13 +153,13 @@ server <- function(input, output, session) {
   #React for plot count bar chart for each group
   plot2react <- reactive({
     dig.df %>%
-      filter(TRTMT == input$TRTMT) #%>%
-      # filter(WHF %in% input$WHF) %>%
-      # filter(STRK %in% input$STRK) %>%
-      # filter(DIABETES %in% input$DIABETES) %>%
-      # filter(ANGINA %in% input$ANGINA) %>%
-      # filter(MI %in% input$MI) %>%
-      # filter(CVD %in% input$CVD)
+      filter(TRTMT == input$TRTMT) %>%
+       filter(WHF == input$WHF) %>%
+       filter(STRK == input$STRK) %>%
+       filter(DIABETES == input$DIABETES) %>%
+       filter(ANGINA == input$ANGINA) %>%
+       filter(MI == input$MI) %>%
+       filter(CVD == input$CVD)
   })
 
   #Hospitalization React:
