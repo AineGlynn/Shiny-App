@@ -16,10 +16,10 @@ dig.df <- dig.df %>%
                       labels = c('Male', 'Female')), 
          HOSP = factor(HOSP, 
                       levels = c(0, 1), 
-                      labels = c('Not Hospitalized', 'Hospitalized')),
+                      labels = c('Not Hospitalised', 'Hospitalised')),
          WHF = factor(WHF, 
                        levels = c(0, 1), 
-                       labels = c('Not WHF', 'WHF')),
+                       labels = c('No WHF', 'WHF')),
          CVD = factor(CVD, 
                       levels = c(0, 1), 
                       labels = c('No CVD', 'CVD')),
@@ -28,7 +28,7 @@ dig.df <- dig.df %>%
                       labels = c('No Stroke', 'Stroke')),
          MI = factor(MI, 
                       levels = c(0, 1), 
-                      labels = c('No MI', 'MI')),
+                      labels = c('No Heart Attack', 'Heart Attack')),
          DIABETES = factor(DIABETES, 
                       levels = c(0, 1), 
                       labels = c('No Diabetes', 'Diabetes')),
@@ -41,7 +41,13 @@ dig.df <- dig.df %>%
          TRTMT = factor(TRTMT,
                         levels = c(1,0),
                         labels = c('Treatment', 'Placebo')),
-         Death_Month = round(DEATHDAY/30)) 
+         Death_Month = round(DEATHDAY/30))
+
+
+dig2.df <- dig.df %>%
+  mutate(DEATH = factor(DEATH,
+                        levels = c(0,1),
+                        labels = c("Alive", "Dead")))
 
 
 ui <- fluidPage(
@@ -54,7 +60,7 @@ ui <- fluidPage(
                                 #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 sliderInput("BMI", "BMI Range:", min = 14, max = 65, value = c(20, 50)),
-                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
+                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60))
                                 ),
                               mainPanel(
                                 plotlyOutput("treatbar"),
@@ -66,7 +72,7 @@ ui <- fluidPage(
                             titlePanel("Outcomes of DIG in different categories"),
                             sidebarLayout(
                               sidebarPanel(
-                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group", choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group", choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 selectInput(inputId = "WHF", label = "Worsening Heart Failure:", choices = c("No WHF", "WHF"), multiple = FALSE, selected = "No WHF"),                            
                                 selectInput(inputId = "STRK", label = "Stroke:", choices = c("No Stroke", "Stroke"), multiple = FALSE, selected = "No Stroke"),                            
@@ -74,12 +80,13 @@ ui <- fluidPage(
                                 selectInput(inputId = "DIABETES", label = "Diabetes:", choices = c("No Diabetes", "Diabetes"), multiple = FALSE, selected = "No Diabetes"),                            
                                 selectInput(inputId = "ANGINA", label = "Angina:", choices = c("No Angina", "Angina"), multiple = FALSE, selected = "No Angina"),                           
                                 selectInput(inputId = "HYPERTEN", label = "Hypertension:", choices = c("No Hypertension", "Hypertension"), multiple = FALSE, selected = "No Hypertension"),  
-                                selectInput(inputId = "CVD", label = "Cardiovascular Disease:", choices = c("No CVD", "CVD"), multiple = FALSE, selected = "No CVD"),
+                                selectInput(inputId = "CVD", label = "Cardiovascular Disease:", choices = c("No CVD", "CVD"), multiple = FALSE, selected = "No CVD")
                                 #selectInput(inputId = "HOSP", label = "Hospitilization:", choices = c("Not Hospitalized", "Hospitalized"), multiple = FALSE, selected = "Not Hospitalized")                       
                               ),
                               
                                 mainPanel(
-                                plotlyOutput("hospitalization")
+                                plotlyOutput("hosp"),
+                                plotlyOutput("mort")
                                 
                                 )
                             )
@@ -153,16 +160,16 @@ server <- function(input, output, session) {
   })
 
   #Hospitalization React:
-  hospitalizationReact <- reactive({
-      dig.df %>%
-        filter(TRTMT == input$TRTMT) %>%
-       filter(HOSP %in% input$HOSP)  %>%
-       filter(WHF %in% input$WHF)%>%
-         filter(STRK %in% input$STRK) %>%
-         filter(DIABETES %in% input$DIABETES) %>%
-        filter(ANGINA %in% input$ANGINA) %>%
-         filter(MI %in% input$MI) %>%
-         filter(CVD %in% input$CVD)
+  hospReact <- reactive({
+      dig2.df %>%
+        filter(SEX %in% SEX) %>%
+        filter(WHF == input$WHF)%>%
+        filter(STRK == input$STRK) %>%
+        filter(DIABETES == input$DIABETES) %>%
+        filter(ANGINA == input$ANGINA) %>%
+        filter(MI == input$MI) %>%
+        filter(CVD == input$CVD)%>%
+        filter(HYPERTEN == input$HYPERTEN)
     })
 
   DIG_sub <- reactive({
@@ -177,9 +184,10 @@ server <- function(input, output, session) {
      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])%>%
      filter(TRTMT == input$TRTMT) %>%
      filter(SEX %in% input$SEX) %>%
-     filter(CVD == input$CVD)
+     filter(CVD == input$CVD) 
  })
 
+ #Baseline characterisitics plots
   generate_BMIboxplot <- function() {
     df1 <- plotBMIreact()
     plot_ly(data = df1,
@@ -213,16 +221,6 @@ server <- function(input, output, session) {
       layout(title = "Treatment Group")
   }
 
-#Hospitalization PLots:
-  generate_hospitalization <- function() {
-    df3 <- hospitalizationReact() %>%
-      count(TRTMT)
-    plot_ly(data = df3,
-            x = ~TRTMT,
-            y = ~n,
-            type = "bar",
-            color = ~TRTMT)
-  }
 
   #PLOTS
   output$treatbar <- renderPlotly({
@@ -236,21 +234,26 @@ server <- function(input, output, session) {
   output$agebox <- renderPlotly({
     generate_AGEboxplot()
   })
-  output$hospitalization <- renderPlotly({
-    generate_hospitalization()
+  
+#Outcome Plots
+  output$hosp <- renderPlotly({
+    p<- hospReact() %>%
+      ggplot(aes(x = TRTMT, fill = HOSP)) +
+      geom_bar(alpha = 0.7) +
+      scale_fill_manual(values = c("Not Hospitalised" = "lightgreen", "Hospitalised" = "purple"))
+      
+    ggplotly(p)
   })
-
-  # #survival function
-  # surv_func <- reactive({
-  #   survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())})
-
-# #survival plot
-#   output$surv1 <- renderPlot({
-#     #digfit = survfit(as.formula(paste("Surv(Death_Month, DEATH)~", paste(1))), data = DIG_sub())
-#     #ggsurvplot(surv_func(), data = DIG_sub())
-#     plot(surv_func()) # need to improve the plot
-#   })
-
+  
+  output$mort <- renderPlotly({
+    m<- hospReact() %>%
+      ggplot(aes(x = TRTMT, fill = DEATH)) +
+      scale_fill_manual(values = c("Dead" = "pink", "Alive" = "cyan3"))+
+      geom_bar(alpha = 0.7)
+    
+    ggplotly(m)
+  })
+  
 #Survival Plots
   output$surv1 <- renderPlot({
     fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt())
