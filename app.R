@@ -203,7 +203,7 @@ server <- function(input, output, session) {
               y = ~BMI,
               type = "box",
               color = ~TRTMT) %>%
-      layout(title = "Treatment Group")
+      layout(title = "BMI in each Treatment Group")
 
   }
 
@@ -214,7 +214,7 @@ server <- function(input, output, session) {
             y = ~AGE,
             type = "box",
             color = ~TRTMT) %>%
-      layout(title = "Treatment Group")
+      layout(title = "Ages across Treatment Groups")
 
   }
 
@@ -226,7 +226,7 @@ server <- function(input, output, session) {
             y = ~n,
             type = "bar",
             color = ~TRTMT) %>%
-      layout(title = "Treatment Group")
+      layout(title = "Number of Patients in each Treatment Group")
   }
 
 
@@ -302,8 +302,8 @@ server <- function(input, output, session) {
     b<- death_filt() %>%
       ggplot(aes(x = DEATH, y = Death_Month, fill = TRTMT))+
       geom_boxplot(alpha = 0.6) + 
-      scale_fill_manual(values = c("Treatment" = "chartreuse2", "Placebo" = "chocolate"))+
-      labs(title = "Boxplot of Month in Death and Treatment groups", 
+      scale_fill_manual(values = c("Treatment" = "chartreuse2", "Placebo" = "chocolate2"))+
+      labs(title = "Boxplot of Follow up time between Groups", 
            fill = "Treatment",
            x = "Death Status", 
            y= "Follow up time (Months)")
