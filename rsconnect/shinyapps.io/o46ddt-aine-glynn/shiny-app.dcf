@@ -4,7 +4,9 @@ username: o46ddt-aine-glynn
 account: o46ddt-aine-glynn
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
-appId: 16246338
-bundleId:
+appId: 16249845
+bundleId: 11280697
 url: https://o46ddt-aine-glynn.shinyapps.io/shiny-app/
 version: 1
+asMultiple: FALSE
+asStatic: FALSE

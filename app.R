@@ -323,5 +323,5 @@ server <- function(input, output, session) {
 shinyApp(ui, server)
 
 #rsconnect::showLogs() 
-#rsconnect::deployApp()
-#rsconnect::deployApp(appName = "DIG Trial Dataset App")
+
+rsconnect::deployApp()
