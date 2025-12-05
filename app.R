@@ -260,15 +260,26 @@ server <- function(input, output, session) {
   output$surv1 <- renderPlotly({
     fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt())
 
-    s1 <- ggsurvplot(fit,data=surv_filt(), palette = c("orchid3"), title = "Survival Times of All Participants")
+    s1 <- ggsurvplot(fit,
+                     data=surv_filt(),
+                     size = 0.3,
+                     palette = c("orchid3"),
+                     title = "Survival Times of All Participants",
+                     legend.title = "Strata", legend.labs = "All participants")
     
     ggplotly(s1[[1]])
   })
 
   output$surv2 <- renderPlotly({
-    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt())
+    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT+CVD,data=surv_filt())
 
-    s2 <- ggsurvplot(fit2,data=surv_filt(), palette = c("lightblue", "hotpink"), title = "Survival Times in Treatment Groups")
+    s2 <- ggsurvplot(fit2,
+                     data=surv_filt(),
+                     size = 0.3,
+                     palette = c("darkolivegreen", "deeppink2","darkorange", "lightseagreen"),
+                     title = "Survival Times in Treatment Groups",
+                     legend.title = "Strata", 
+                     legend.labs = c("Treatment, No CVD", "Treatment, CVD", "Placebo, No CVD", "Placebo, CVD"))
     
     ggplotly(s2[[1]])
   })
