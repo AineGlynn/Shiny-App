@@ -96,14 +96,17 @@ ui <- fluidPage(
                             titlePanel("Survival Plots of Patients"),
                             sidebarLayout(
                               sidebarPanel(
-                                checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
+                                #checkboxGroupInput(inputId = "TRTMT", label = "Treatment Group" , choices = c("Treatment", "Placebo"), selected = c("Treatment", "Placebo")),
                                 selectInput(inputId = "SEX", label = "Select Gender:", choices = c("Male", "Female"), multiple = TRUE, selected = c("Male", "Female")),
                                 sliderInput("Death_Month", "Follow up time in months:", min = 0, max = 60, value = c(0,10), animate = TRUE),
+                                sliderInput("AGE", "Participant Age:", min = 20, max = 95, value = c(30, 60)),
                                 checkboxGroupInput("CVD", "CVD", choices = c("CVD", "No CVD"), selected = c("CVD", "No CVD"))
+                                
                               ),
                               mainPanel(
                                 plotlyOutput("surv1"),
                                 plotlyOutput("surv2"),
+                                plotlyOutput("survbox"),
                                 dataTableOutput("table1")
                               )
                             )
@@ -179,11 +182,19 @@ server <- function(input, output, session) {
  surv_filt <- reactive({
    dig.df %>%
      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])%>%
-     filter(TRTMT == input$TRTMT) %>%
+     filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
      filter(SEX %in% input$SEX) %>%
      filter(CVD == input$CVD) 
  })
 
+  death_filt <- reactive({
+    dig2.df %>%
+      filter(Death_Month >= input$Death_Month[1] & Death_Month <= input$Death_Month[2])%>%
+      filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
+      filter(SEX %in% input$SEX) %>%
+      filter(CVD == input$CVD) 
+  })
+  
  #Baseline characterisitics plots
   generate_BMIboxplot <- function() {
     df1 <- plotBMIreact()
@@ -237,7 +248,7 @@ server <- function(input, output, session) {
     p<- hospReact() %>%
       ggplot(aes(x = TRTMT, fill = HOSP)) +
       geom_bar(alpha = 0.7) +
-      scale_fill_manual(values = c("Not Hospitalised" = "lightgreen", "Hospitalised" = "purple"))+
+      scale_fill_manual(values = c("Not Hospitalised" = "lightgreen", "Hospitalised" = "orchid2"))+
       labs(title = "Hospitalisations between Treatment Groups",
            x = "Treatment",
            fill = "Hospitalisation")
@@ -245,10 +256,11 @@ server <- function(input, output, session) {
     ggplotly(p)
   })
   
+  #mortality
   output$mort <- renderPlotly({
     m <- hospReact() %>%
       ggplot(aes(x = TRTMT, fill = DEATH)) +
-      scale_fill_manual(values = c("Dead" = "pink", "Alive" = "cyan3"))+
+      scale_fill_manual(values = c("Dead" = "lightpink", "Alive" = "aquamarine2"))+
       geom_bar(alpha = 0.7)+
       labs(title = "Mortality between Treatment groups",
            x = "Treatment",
@@ -264,7 +276,7 @@ server <- function(input, output, session) {
     s1 <- ggsurvplot(fit,
                      data=surv_filt(),
                      size = 0.4,
-                     palette = c("orchid3"),
+                     palette = c("orchid2"),
                      title = "Survival Times of All Participants",
                      legend.title = "Strata", legend.labs = "All participants")
     
@@ -285,7 +297,19 @@ server <- function(input, output, session) {
     ggplotly(s2[[1]])
   })
 
-
+  #followuptimes per group
+  output$survbox <- renderPlotly({
+    b<- death_filt() %>%
+      ggplot(aes(x = DEATH, y = Death_Month, fill = TRTMT))+
+      geom_boxplot(alpha = 0.6) + 
+      scale_fill_manual(values = c("Treatment" = "chartreuse2", "Placebo" = "chocolate"))+
+      labs(title = "Boxplot of Month in Death and Treatment groups", 
+           fill = "Treatment",
+           x = "Death Status", 
+           y= "Follow up time (Months)")
+    
+    ggplotly(b)
+  })
 
 
 
@@ -298,4 +322,6 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
+#rsconnect::showLogs() 
+#rsconnect::deployApp()
 #rsconnect::deployApp(appName = "DIG Trial Dataset App")
