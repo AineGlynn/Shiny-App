@@ -6,6 +6,7 @@ library(plotly)
 library(survival)
 library(survminer)
 library(bslib)
+library(rsconnect)
 
 dig.df <- read_csv("DIG.csv")
 dig.df <- dig.df %>%
@@ -276,3 +277,5 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui, server)
+
+rsconnect::deployApp(appName = "DIG Trial Dataset App")
