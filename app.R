@@ -320,8 +320,8 @@ server <- function(input, output, session) {
 }
 
 
-shinyApp(ui, server)
-
+shinyApp(ui = ui, server = server)
+shiny::runApp("C:/Users/aineg/OneDrive - TNS Capital/Aine Folder/HealthDataScience/Statistical Computing for Biomedical Data/Shiny-App")
 #rsconnect::showLogs() 
-
-rsconnect::deployApp()
+#rsconnect::deployApp()
+#rsconnect::deployApp(appName = "DIG Trial Dataset App")
