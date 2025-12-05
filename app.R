@@ -109,14 +109,11 @@ ui <- fluidPage(
 
                             )),
     nav_menu(
-      "Other links",
-      nav_panel("D", "Panel D content"),
-      "----",
-      "Description:",
+      "The DIG Trial",
       nav_item(
-        a("Shiny", href = "https://shiny.posit.co", target = "_blank")
-      ),
-      ),
+        a("DIG Trial", href = "https://biolincc.nhlbi.nih.gov/studies/dig/")
+      )
+    )
     ),
   id = "tab"
 
