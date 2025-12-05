@@ -6,6 +6,7 @@ library(plotly)
 library(survival)
 library(survminer)
 library(bslib)
+library(rsconnect)
 
 dig.df <- read_csv("DIG.csv")
 dig.df <- dig.df %>%
@@ -262,7 +263,7 @@ server <- function(input, output, session) {
 
     s1 <- ggsurvplot(fit,
                      data=surv_filt(),
-                     size = 0.3,
+                     size = 0.4,
                      palette = c("orchid3"),
                      title = "Survival Times of All Participants",
                      legend.title = "Strata", legend.labs = "All participants")
@@ -271,15 +272,15 @@ server <- function(input, output, session) {
   })
 
   output$surv2 <- renderPlotly({
-    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT+CVD,data=surv_filt())
+    fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt())
 
     s2 <- ggsurvplot(fit2,
                      data=surv_filt(),
-                     size = 0.3,
-                     palette = c("darkolivegreen", "deeppink2","darkorange", "lightseagreen"),
+                     size = 0.4,
+                     palette = c("coral","lightseagreen"),
                      title = "Survival Times in Treatment Groups",
                      legend.title = "Strata", 
-                     legend.labs = c("Treatment, No CVD", "Treatment, CVD", "Placebo, No CVD", "Placebo, CVD"))
+                     legend.labs = c("Treatment","Placebo"))
     
     ggplotly(s2[[1]])
   })
@@ -296,3 +297,5 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui, server)
+
+#rsconnect::deployApp(appName = "DIG Trial Dataset App")
