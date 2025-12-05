@@ -101,8 +101,8 @@ ui <- fluidPage(
                                 checkboxGroupInput("CVD", "CVD", choices = c("CVD", "No CVD"), selected = c("CVD", "No CVD"))
                               ),
                               mainPanel(
-                                plotOutput("surv1"),
-                                plotOutput("surv2"),
+                                plotlyOutput("surv1"),
+                                plotlyOutput("surv2"),
                                 dataTableOutput("table1")
                               )
                             )
@@ -115,16 +115,16 @@ ui <- fluidPage(
       )
     )
     ),
-  id = "tab"
-
-  #   mainPanel(
-  #     #plotlyOutput("plot"),
-  #     plotlyOutput("plot2"),
-  #     plotlyOutput("plot4"),
-  #     dataTableOutput("table1"),
-  #     dataTableOutput("table2")
-  #   )
-  # )
+  id = "tab",
+  
+  
+  theme = bs_theme(bg = "white",
+                   fg = "black",
+                   primary = "#E69F00",
+                   secondary = "#0072B2",
+                   success = "#009E73",
+                   base_font = font_google("Inter"),
+                   code_font = font_google("JetBrains Mono"))
 )
 
 server <- function(input, output, session) {
@@ -137,21 +137,20 @@ server <- function(input, output, session) {
   #Boxplot: BMI
   plotBMIreact <- reactive({
     dig.df %>%
-      #filter(TRTMT == input$TRTMT) %>%
+      filter(SEX %in% input$SEX ) %>%
       filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
   #Boxplot: AGE
   plotAGEreact <- reactive({
     dig.df %>%
-      #filter(TRTMT == input$TRTMT) %>%
+      filter(SEX %in% input$SEX ) %>%
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2])
   })
 
   #React for plot count bar chart for each group
   plot2react <- reactive({
     dig.df %>%
-      #filter(TRTMT == input$TRTMT) %>%
-      filter(SEX %in% SEX ) %>%
+      filter(SEX %in% input$SEX ) %>%
       filter(AGE >= input$AGE[1] & AGE <= input$AGE[2]) %>%
       filter(BMI >= input$BMI[1] & BMI <= input$BMI[2])
   })
@@ -159,7 +158,7 @@ server <- function(input, output, session) {
   #Hospitalization React:
   hospReact <- reactive({
       dig2.df %>%
-        filter(SEX %in% SEX) %>%
+        filter(SEX %in% input$SEX) %>%
         filter(WHF == input$WHF)%>%
         filter(STRK == input$STRK) %>%
         filter(DIABETES == input$DIABETES) %>%
@@ -237,31 +236,41 @@ server <- function(input, output, session) {
     p<- hospReact() %>%
       ggplot(aes(x = TRTMT, fill = HOSP)) +
       geom_bar(alpha = 0.7) +
-      scale_fill_manual(values = c("Not Hospitalised" = "lightgreen", "Hospitalised" = "purple"))
+      scale_fill_manual(values = c("Not Hospitalised" = "lightgreen", "Hospitalised" = "purple"))+
+      labs(title = "Hospitalisations between Treatment Groups",
+           x = "Treatment",
+           fill = "Hospitalisation")
       
     ggplotly(p)
   })
   
   output$mort <- renderPlotly({
-    m<- hospReact() %>%
+    m <- hospReact() %>%
       ggplot(aes(x = TRTMT, fill = DEATH)) +
       scale_fill_manual(values = c("Dead" = "pink", "Alive" = "cyan3"))+
-      geom_bar(alpha = 0.7)
+      geom_bar(alpha = 0.7)+
+      labs(title = "Mortality between Treatment groups",
+           x = "Treatment",
+           fill = "Death")
     
     ggplotly(m)
   })
   
 #Survival Plots
-  output$surv1 <- renderPlot({
+  output$surv1 <- renderPlotly({
     fit <- survfit(Surv(Death_Month,DEATH)~1,data=surv_filt())
 
-    ggsurvplot(fit,data=surv_filt(),pval=TRUE, palette = c("orchid2"), title = "Survival Times of All Participants")
+    s1 <- ggsurvplot(fit,data=surv_filt(), palette = c("orchid3"), title = "Survival Times of All Participants")
+    
+    ggplotly(s1[[1]])
   })
 
-  output$surv2 <- renderPlot({
+  output$surv2 <- renderPlotly({
     fit2 <- survfit(Surv(Death_Month,DEATH)~TRTMT,data=surv_filt())
 
-    ggsurvplot(fit2,data=surv_filt(),pval=TRUE, palette = c("lightblue", "hotpink"), title = "Survival Times in Treatment Groups")
+    s2 <- ggsurvplot(fit2,data=surv_filt(), palette = c("lightblue", "hotpink"), title = "Survival Times in Treatment Groups")
+    
+    ggplotly(s2[[1]])
   })
 
 
